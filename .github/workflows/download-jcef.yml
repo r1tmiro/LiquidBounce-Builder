@@ -1,0 +1,47 @@
+name: Download LiquidBounce JCEF
+
+on:
+  workflow_dispatch:
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download JCEF
+        shell: bash
+        run: |
+          mkdir -p output
+
+          curl -fL \
+            --retry 5 \
+            --retry-delay 5 \
+            --connect-timeout 30 \
+            --max-time 600 \
+            "https://api.liquidbounce.net/api/v3/resource/mcef-cef/fe8cc9eccf3fa8eab929a3265f151df7581df768/windows_amd64" \
+            -o output/jcef-download
+
+      - name: Check downloaded file
+        shell: bash
+        run: |
+          echo "Downloaded file:"
+          ls -lh output/
+
+          echo "File type:"
+          file output/jcef-download
+
+          echo "SHA256:"
+          sha256sum output/jcef-download
+
+          echo "First bytes:"
+          xxd -l 32 output/jcef-download
+
+      - name: Upload JCEF
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiquidBounce-JCEF-Windows-x64
+          path: output/jcef-download
+          if-no-files-found: error
