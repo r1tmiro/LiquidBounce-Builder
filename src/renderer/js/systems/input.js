@@ -14,6 +14,7 @@ export class Input {
     this.onLockChange = null;
 
     window.addEventListener('keydown', e => {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName)) return;
       if (e.repeat) return;
       const k = e.code;
       this.keys.add(k);

@@ -348,7 +348,7 @@ export class NavGrid {
 
   lineOfSight(a, b) {
     const dist = Math.hypot(b.x - a.x, b.z - a.z);
-    const steps = Math.ceil(dist / (this.cell * 0.5));
+    const steps = Math.max(1, Math.ceil(dist / (this.cell * 0.5)));
     for (let i = 0; i <= steps; i++) {
       const t = i / steps;
       const x = a.x + (b.x - a.x) * t;

@@ -423,3 +423,7 @@ canvas#scene { position: absolute; inset: 0; width: 100%; height: 100%; display:
 ::-webkit-scrollbar-track { background: rgba(255,255,255,.03); }
 ::-webkit-scrollbar-thumb { background: rgba(150,180,210,.22); }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,159,67,.4); }
+
+#chat-form {display:flex;gap:8px} #chat-input {min-width:0;flex:1;background:#070b11;border:1px solid var(--line);color:var(--text);padding:10px;font:13px var(--font);user-select:text} #meeting-chat {min-height:120px;max-height:220px} #meeting-skip {cursor:pointer;padding:10px;border:1px solid var(--line)}
+@media (max-height:750px) { .menu-inner {gap:16px;padding:24px 34px} .game-title{font-size:48px} .btn-lg{padding:12px 22px} #meeting{padding:16px 4vw} .meeting-head{margin-bottom:12px} .meet-player{padding:6px 12px} }
+@media (max-width:800px) {#task-canvas{width:80vw;height:auto}.task-console-hint{display:none}.help-cols{grid-template-columns:1fr}#hud-right{transform:scale(.72);transform-origin:top right}#meeting-body{gap:10px} .game-title{font-size:40px}}

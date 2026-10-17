@@ -87,6 +87,16 @@ def join_objects(objs, name, col=None):
     objs = [o for o in objs if o]
     if not objs:
         return None
+    # Bake each object's modifiers before joining. Blender only preserves the
+    # active object's modifiers when joining, so skipping this loses bevels and
+    # subdivides unrelated pieces such as teeth and visor frames.
+    for o in objs:
+        bpy.ops.object.select_all(action='DESELECT')
+        o.select_set(True)
+        bpy.context.view_layer.objects.active = o
+        if o.type == 'CURVE': bpy.ops.object.convert(target='MESH')
+        for mod in list(o.modifiers):
+            bpy.ops.object.modifier_apply(modifier=mod.name)
     bpy.ops.object.select_all(action='DESELECT')
     for o in objs:
         o.select_set(True)
@@ -397,6 +407,8 @@ def build_crew(name='crew'):
                         col=col)
 
     objs = [body, visor, frame, pack, tank, nozzle, foot_l, foot_r, nub, nub_light]
+    for o in objs:
+        if o not in (foot_l, foot_r): o.location.z += 0.14
     merged = join_objects(objs, name, col)
     shade_auto_smooth(merged, 40)
     return [merged], col
@@ -825,7 +837,8 @@ BUILDERS = [b for b in _ALL if (not _ONLY or b[0] in _ONLY.split(','))]
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     os.makedirs(PREVIEW_DIR, exist_ok=True)
-    manifest = {}
+    manifest_path = os.path.join(OUT_DIR, 'manifest.json')
+    manifest = json.load(open(manifest_path)) if os.path.exists(manifest_path) else {}
     for name, builder in BUILDERS:
         print(f'[build] {name}')
         reset_scene()
@@ -836,6 +849,8 @@ def main():
             'bytes': os.path.getsize(path),
         }
         cleanup(objs)
+    for fn in os.listdir(OUT_DIR):
+        if fn.endswith('.glb'): manifest[fn[:-4]] = {'file':'models/'+fn, 'bytes':os.path.getsize(os.path.join(OUT_DIR,fn))}
     with open(os.path.join(OUT_DIR, 'manifest.json'), 'w') as f:
         json.dump(manifest, f, indent=2)
     print('DONE: %d models' % len(manifest))

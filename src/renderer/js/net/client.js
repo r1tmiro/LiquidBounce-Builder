@@ -1,10 +1,5 @@
-/**
- * Network transports.
- *
- *  WsTransport  - direct WebSocket to an authoritative server (LAN / internet)
- *  PeerTransport- WebRTC data channel via the PeerJS cloud (no server needed)
- */
-import { MSG, PROTOCOL_VERSION, peerIdForRoom, encode, decode } from '../../../shared/net/protocol.js';
+/** Authoritative WebSocket client. Direct server connection; no external relay. */
+import { MSG, PROTOCOL_VERSION, encode, decode } from '../../../shared/net/protocol.js';
 
 export class Transport {
   constructor(handlers = {}) {

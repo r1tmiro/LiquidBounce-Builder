@@ -1,6 +1,66 @@
 {
   "impostor": {
     "file": "models/impostor.glb",
-    "bytes": 1269472
+    "bytes": 327436
+  },
+  "crew": {
+    "file": "models/crew.glb",
+    "bytes": 316956
+  },
+  "husk": {
+    "file": "models/husk.glb",
+    "bytes": 242140
+  },
+  "console": {
+    "file": "models/console.glb",
+    "bytes": 19188
+  },
+  "vent": {
+    "file": "models/vent.glb",
+    "bytes": 16412
+  },
+  "reactor": {
+    "file": "models/reactor.glb",
+    "bytes": 97500
+  },
+  "crate": {
+    "file": "models/crate.glb",
+    "bytes": 5616
+  },
+  "barrel": {
+    "file": "models/barrel.glb",
+    "bytes": 16440
+  },
+  "table": {
+    "file": "models/table.glb",
+    "bytes": 6548
+  },
+  "chair": {
+    "file": "models/chair.glb",
+    "bytes": 7740
+  },
+  "light_fixture": {
+    "file": "models/light_fixture.glb",
+    "bytes": 4908
+  },
+  "pipe_set": {
+    "file": "models/pipe_set.glb",
+    "bytes": 12464
+  },
+  "plant": {
+    "file": "models/plant.glb",
+    "bytes": 39536
+  },
+  "medkit": {
+    "file": "models/medkit.glb",
+    "bytes": 9136
+  },
+  "server_rack": {
+    "file": "models/server_rack.glb",
+    "bytes": 17528
+  },
+  "sign": {
+    "file": "models/sign.glb",
+    "bytes": 4864
   }
 }

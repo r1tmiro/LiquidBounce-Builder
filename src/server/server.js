@@ -4,7 +4,6 @@
  *  - hosts rooms (each room owns a simulation + bots)
  *  - broadcasts snapshots to the players
  *  - serves the built game over HTTP so a browser on the same network can play
- *  - optionally relays PeerJS signalling so peers can meet over WebRTC
  *
  * Usage:  node src/server/server.js --port 7777
  */

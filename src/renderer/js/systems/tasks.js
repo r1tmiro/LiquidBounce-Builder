@@ -264,7 +264,7 @@ export class DivertGame extends Minigame {
   }
 
   setSlider(i, y) {
-    const v = Math.max(0, Math.min(1, (390 - y) / 260));
+    const v = Math.max(0, Math.min(1, (390 - y) / 280));
     this.sliders[i].value = v;
   }
 
@@ -347,7 +347,7 @@ export class FuelGame extends Minigame {
 
   render() {
     const { ctx, canvas } = this;
-    this.frame('Refuel', 'Hold the button to fill the tank. Stop in the green band.');
+    this.frame('Refuel', 'Hold the button to fill the tank. Fill up to the green band.');
     const x = 250, y = 110, w = 220, h = 240;
     ctx.fillStyle = 'rgba(0,0,0,.5)';
     ctx.fillRect(x, y, w, h);

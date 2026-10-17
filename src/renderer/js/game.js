@@ -13,7 +13,7 @@ import { buildWorld, buildProps } from './view/world.js';
 import { ActorManager } from './view/actors.js';
 import { Input } from './systems/input.js';
 import { AudioEngine } from './systems/audio.js';
-import { UI } from './systems/ui.js';
+import { UI, escapeHtml } from './systems/ui.js';
 import { Minimap } from './systems/minimap.js';
 import { WsTransport } from './net/client.js';
 
@@ -111,6 +111,12 @@ export class Game {
     this.props = buildProps(this.view.scene, this.assets, probe.grid);
     this.actors = new ActorManager(this.view.scene, this.assets);
     this.grid = probe.grid;
+    this.taskMarkers = new Map();
+    for (const t of TASKS) {
+      const marker = new THREE.Mesh(new THREE.RingGeometry(0.45,0.52,32), new THREE.MeshBasicMaterial({color:0xffb040,side:THREE.DoubleSide,transparent:true,opacity:0.8,depthWrite:false}));
+      marker.rotation.x=-Math.PI/2; marker.position.set(t.pos[0],0.03,t.pos[2]);
+      marker.visible=false; this.view.scene.add(marker); this.taskMarkers.set(t.id,marker);
+    }
     // props also block navigation
     for (const p of Object.values(this.props.children)) {
       const r = propRadius(p.name || '');
@@ -123,6 +129,7 @@ export class Game {
   // ═══════════════════════════════════════════════════════════════ menu ══
   bindUI() {
     const $ = id => document.getElementById(id);
+    $('chat-form').addEventListener('submit', e => { e.preventDefault(); const input=$('chat-input'); if(input.value.trim()) this.sendCommand({type:'chat',text:input.value}); input.value=''; });
     $('btn-single').addEventListener('click', () => this.startSolo());
     $('btn-host').addEventListener('click', () => this.openJoinDialog('host'));
     $('btn-join').addEventListener('click', () => this.openJoinDialog('join'));
@@ -386,6 +393,7 @@ export class Game {
   handleEvent(ev) {
     if (!ev) return;
     switch (ev.type) {
+      case 'chat': { const d = document.createElement('div'); d.className='chat-msg'; d.innerHTML = '<b>'+escapeHtml(ev.name)+'</b>: '+escapeHtml(ev.text); this.ui.el.meetingChat.appendChild(d); this.ui.el.meetingChat.scrollTop=this.ui.el.meetingChat.scrollHeight; break; }
       case 'kill': {
         const victim = this.targets.get(ev.victim);
         const relX = victim ? victim.x - (this.targets.get(this.myPlayerId)?.x || 0) : 0;
@@ -587,6 +595,7 @@ export class Game {
       const wx = axis.x * cos - axis.z * sin;
       const wz = -axis.x * sin - axis.z * cos;
       this.sendInput({ mx: wx, mz: wz, run: this.input.running });
+      if (Math.hypot(axis.x,axis.z)>0 && this.time-(this.lastStep||0)>(this.input.running?0.32:0.52)) { this.lastStep=this.time; this.audio.footstep(this.input.running); }
       if (axis.z !== 0) this.bobPhase += dt * (this.input.running ? 13 : 8.5) * Math.abs(axis.z);
     } else if (this.mode !== 'menu') {
       this.sendInput({ mx: 0, mz: 0, run: false });
@@ -599,7 +608,7 @@ export class Game {
     if (playing && this.input.pressed('KeyB')) this.sendCommand({type:'sabotage', kind:'lights'});
     if (playing && this.input.pressed('KeyN')) this.sendCommand({type:'sabotage', kind:'reactor'});
     if (this.input.pressed('KeyF')) this.toggleFlashlight();
-    if (this.input.pressed('KeyM')) this.toggleMap();
+    if (playing && this.input.pressed('KeyM')) this.toggleMap();
     if (this.input.pressed('Escape')) { if (this.ui.taskOpen) this.ui.closeTask(); else if (this.meetingData) this.vote(null); else if (this.mode !== 'menu' && !this.ended) this.pause(); }
 
     // camera
@@ -625,8 +634,10 @@ export class Game {
     // world + actors
     if (this.ui.minigame) { this.ui.minigame.update(dt); if (this.ui.minigame) this.ui.minigame.render(); }
     this.world.update(dt, this.time, camPos, this.view.qualityLights || 10);
+    if (this.snapshot?.sabotage?.kind === 'lights') { for (const l of this.world.lights) l.light.intensity *= 0.07; }
     this.actors.update(dt, this.snapshot?.players || [], this.targets);
     this.view.updateDread(dt, this.dreadTarget);
+    for(const [id, marker] of this.taskMarkers) { marker.visible = this.mode !== 'menu' && !!me?.tasks?.some(t=>t.id===id && !t.done); marker.material.opacity=0.45+Math.sin(this.time*2)*0.2; }
 
     // hud
     this.uiTick += dt;

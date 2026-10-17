@@ -249,7 +249,7 @@ export class Sim {
   /** Discrete commands from clients. */
   command(id, cmd) {
     const p = this.players.get(id);
-    if (!p) return;
+    if (!p || !cmd || typeof cmd !== 'object') return;
     switch (cmd.type) {
       case 'taskBegin': return this.cmdTaskBegin(p, cmd);
       case 'task': return this.cmdTask(p, cmd);
@@ -260,6 +260,14 @@ export class Sim {
       case 'vent': return this.cmdVent(p, cmd);
       case 'sabotage': return this.cmdSabotage(p, cmd);
       case 'fixSabotage': return this.cmdFixSabotage(p, cmd);
+      case 'chat': {
+        if (this.phase !== PHASE.MEETING || !p.alive || typeof cmd.text !== 'string') return;
+        const now = Date.now();
+        if (now - (p.lastChat || 0) < 700) return;
+        p.lastChat = now;
+        this.emit({type:'chat', player:p.id, name:p.name, text:cmd.text.trim().slice(0,180)});
+        return;
+      }
       case 'ready': this.setReady(id, !!cmd.value); return;
       case 'leave': this.players.delete(id); return;
       default: return;
@@ -402,6 +410,11 @@ export class Sim {
   updateMeeting(dt) {
     if (!this.meeting) { this.phase = PHASE.PLAYING; return; }
     this.meeting.timer -= dt;
+    if (!this.meeting.spoken && this.meeting.timer < 24) {
+      this.meeting.spoken = true;
+      const speaker = this.alivePlayers().find(p => p.isBot);
+      if (speaker) this.emit({type:'chat', name:speaker.name, text:'Stay together. Did anyone see someone near the vents?'});
+    }
     for (const entry of this.meeting.players) {
       const bot = this.players.get(entry.id);
       if (bot?.isBot && bot.alive && !entry.hasVoted && this.meeting.timer < 12 + this.rng() * 9) {
@@ -527,7 +540,7 @@ export class Sim {
         threat: me && me.role !== ROLE.IMPOSTOR && p.role === ROLE.IMPOSTOR && dist(me.x, me.z, p.x, p.z) < 12 && this.grid.lineOfSight(me, p) ? true : undefined,
         impostorMark: (me && me.role === ROLE.IMPOSTOR) ? p.role : undefined,
         tasks: (me && p.id === me.id) ? p.tasks.map(t => ({
-          id: t.id, label: t.label, type: t.type, progress: t.progress, done: t.done,
+          id: t.id, label: t.label, room: t.room, type: t.type, progress: t.progress, done: t.done,
         })) : undefined,
         taskCount: (me && p.id === me.id) ? p.tasks.length : undefined,
         doneCount: (me && p.id === me.id) ? p.tasks.filter(t => t.done).length : undefined,

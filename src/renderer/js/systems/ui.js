@@ -98,7 +98,7 @@ export class UI {
     for (const t of tasks) {
       const li = document.createElement('li');
       if (t.done) li.classList.add('done');
-      li.innerHTML = `<span class="tdot"></span><span>${escapeHtml(t.label)}</span>`;
+      li.innerHTML = `<span class="tdot"></span><span>${escapeHtml(t.label)} <small style="opacity:.6">${escapeHtml(t.room || '')}</small></span>`;
       list.appendChild(li);
     }
   }

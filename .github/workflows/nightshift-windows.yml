@@ -12,6 +12,7 @@ on:
       - '.github/workflows/nightshift-windows.yml'
 permissions:
   contents: read
+  checks: write
 jobs:
   windows:
     runs-on: windows-latest
@@ -25,6 +26,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Download official Electron runtime
+        run: node node_modules/electron/install.js
       - name: Logic and real two-client networking tests
         run: npm run test:logic
       - name: Build renderer
@@ -32,12 +35,26 @@ jobs:
       - name: Smoke test real Electron on Windows
         shell: pwsh
         run: |
-          $p = Start-Process -FilePath "node_modules/electron/dist/electron.exe" -ArgumentList ". --smoke-test" -PassThru -Wait -NoNewWindow
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          $p = Start-Process -FilePath "node_modules/electron/dist/electron.exe" -ArgumentList ". --smoke-test" -PassThru -Wait -NoNewWindow -RedirectStandardOutput artifacts/electron-stdout.txt -RedirectStandardError artifacts/electron-stderr.txt
           if ($p.ExitCode -ne 0) { throw "Electron smoke test failed with exit code $($p.ExitCode)" }
           if (!(Test-Path artifacts/electron-smoke.json)) { throw "No smoke test report produced" }
           Get-Content artifacts/electron-smoke.json
+      - name: Publish Electron diagnostic report
+        if: always()
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const files = ['electron-smoke.json','electron-smoke-error.txt','electron-stdout.txt','electron-stderr.txt'];
+            let text = '';
+            for (const f of files) if(fs.existsSync('artifacts/'+f)) text += '\n## '+f+'\n```\n'+fs.readFileSync('artifacts/'+f,'utf8').slice(-10000)+'\n```\n';
+            await github.rest.checks.create({...context.repo, name:'Electron diagnostics', head_sha:context.sha, status:'completed', conclusion:fs.existsSync('artifacts/electron-smoke.json')?'success':'neutral', output:{title:'Windows Electron diagnostic files', summary:text || 'No diagnostic files produced.'}});
       - name: Build Windows installer and portable executable
-        run: npx electron-builder --win nsis portable --x64 --publish never
+        shell: pwsh
+        run: |
+          npx electron-builder --win nsis portable --x64 --publish never 2>&1 | Tee-Object artifacts/build-log.txt
+          if ($LASTEXITCODE -ne 0) { throw "Packaging failed" }
       - name: Checksums
         shell: pwsh
         run: |

@@ -25,11 +25,6 @@ export function makeRoomCode(rng = Math.random) {
   return code;
 }
 
-/** PeerJS id used for the cloud (WebRTC) transport. */
-export function peerIdForRoom(room) {
-  return `amongus-nightshift-${room.toLowerCase()}`;
-}
-
 export function encode(msg) { return JSON.stringify(msg); }
 export function decode(raw) {
   try { return JSON.parse(raw); } catch { return null; }
