@@ -1,0 +1,58 @@
+name: Night Shift - Windows EXE
+on:
+  workflow_dispatch:
+  push:
+    branches: ['arena/fd5cae78-liquidbounce-builder']
+    paths:
+      - 'src/**'
+      - 'assets/**'
+      - 'tests/**'
+      - 'tools/**'
+      - 'package*.json'
+      - '.github/workflows/nightshift-windows.yml'
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Logic and real two-client networking tests
+        run: npm run test:logic
+      - name: Build renderer
+        run: npm run build
+      - name: Smoke test real Electron on Windows
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath "node_modules/electron/dist/electron.exe" -ArgumentList ". --smoke-test" -PassThru -Wait -NoNewWindow
+          if ($p.ExitCode -ne 0) { throw "Electron smoke test failed with exit code $($p.ExitCode)" }
+          if (!(Test-Path artifacts/electron-smoke.json)) { throw "No smoke test report produced" }
+          Get-Content artifacts/electron-smoke.json
+      - name: Build Windows installer and portable executable
+        run: npx electron-builder --win nsis portable --x64 --publish never
+      - name: Checksums
+        shell: pwsh
+        run: |
+          Get-FileHash release/*.exe -Algorithm SHA256 | Format-Table -AutoSize | Out-String -Width 300 | Set-Content release/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NightShift-Windows-x64
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Windows-smoke-test
+          path: artifacts/
+          if-no-files-found: ignore

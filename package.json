@@ -1,0 +1,77 @@
+{
+  "name": "among-us-nightshift",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Among Us: Night Shift - 3D horror social deduction game built with Electron + Three.js",
+  "main": "src/main/main.cjs",
+  "scripts": {
+    "build": "node tools/build-renderer.js",
+    "build:watch": "node tools/build-renderer.js --watch",
+    "start": "npm run build && electron .",
+    "server": "node src/server/server.js --port 7777",
+    "test": "node tests/run-all.js",
+    "assets": "python3 tools/blender/build_assets.py",
+    "previews": "python3 tools/blender/render_previews.py",
+    "dist:win": "npm run build && electron-builder --win nsis portable --x64 --publish never",
+    "test:logic": "node tests/run-logic.js",
+    "test:render": "node tests/run-render.js"
+  },
+  "dependencies": {
+    "three": "^0.180.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@sparticuz/chromium": "^133.0.0",
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.25.0",
+    "puppeteer-core": "^24.10.0"
+  },
+  "type": "module",
+  "author": "Night Shift contributors",
+  "license": "UNLICENSED",
+  "productName": "Night Shift",
+  "build": {
+    "appId": "io.nightshift.game",
+    "productName": "Night Shift",
+    "directories": {
+      "output": "release",
+      "buildResources": "assets/app"
+    },
+    "files": [
+      "src/main/**",
+      "src/server/**",
+      "src/shared/**",
+      "dist/renderer/**",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/app/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "NightShift-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "NightShift-Portable-${version}.${ext}"
+    }
+  }
+}

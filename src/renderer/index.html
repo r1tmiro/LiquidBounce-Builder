@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; worker-src blob:; object-src 'none'; base-uri 'self'" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>AMONG US: NIGHT SHIFT</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+
+  <!-- ══════════════ HUD ══════════════ -->
+  <div id="hud" class="hidden">
+    <div id="hud-top">
+      <div class="taskbar-wrap">
+        <div class="taskbar-label">TASKS</div>
+        <div class="taskbar"><div id="taskbar-fill"></div></div>
+      </div>
+      <div id="clock"><span id="clock-text">5:00</span></div>
+      <div id="role-chip" class="hidden">CREWMATE</div>
+    </div>
+
+    <ul id="task-list"></ul>
+
+    <div id="hud-right">
+      <canvas id="minimap" width="260" height="260"></canvas>
+      <div id="minimap-label">THE MAKO · DECK 1</div>
+    </div>
+
+    <div id="crosshair"></div>
+    <div id="prompt" class="hidden"><span id="prompt-key">E</span><span id="prompt-text"></span></div>
+
+    <div id="status-stack"></div>
+    <div id="kill-cooldown" class="hidden">
+      <div class="kc-label">KILL</div>
+      <div class="kc-bar"><div id="kc-fill"></div></div>
+    </div>
+
+    <div id="dread-vignette"></div>
+    <div id="flash"></div>
+    <div id="subtitle"></div>
+  </div>
+
+  <!-- ══════════════ TASK MINIGAME ══════════════ -->
+  <div id="task-overlay" class="hidden">
+    <div class="task-console">
+      <div class="task-console-head">
+        <span id="task-title">TASK</span>
+        <span class="task-console-hint">ESC / right click to close</span>
+      </div>
+      <canvas id="task-canvas" width="720" height="460"></canvas>
+      <div class="task-console-foot">
+        <div id="task-progress"><div id="task-progress-fill"></div></div>
+        <button id="task-close" class="btn btn-ghost">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ MEETING ══════════════ -->
+  <div id="meeting" class="hidden">
+    <div class="meeting-head">
+      <h2 id="meeting-title">EMERGENCY MEETING</h2>
+      <div id="meeting-timer">28</div>
+      <p id="meeting-sub">Discuss. Then vote.</p>
+    </div>
+    <div id="meeting-body">
+      <ul id="meeting-players"></ul>
+      <div id="meeting-right">
+        <div id="meeting-body-report">
+          <h3>BODY REPORTED</h3>
+          <div id="report-card"></div>
+        </div>
+        <div id="meeting-chat"></div>
+        <div id="meeting-skip">Waiting for votes…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ DEATH ══════════════ -->
+  <div id="death-screen" class="hidden">
+    <div class="death-inner">
+      <h1>YOU DIED</h1>
+      <p id="death-sub">Your body lies in the dark.</p>
+      <button id="report-btn" class="btn btn-danger">REPORT BODY</button>
+      <p class="ghost-hint">As a ghost you can still finish your tasks.</p>
+    </div>
+  </div>
+
+  <!-- ══════════════ GAME OVER ══════════════ -->
+  <div id="gameover" class="hidden">
+    <div class="go-inner">
+      <h1 id="go-title">VICTORY</h1>
+      <p id="go-sub"></p>
+      <div id="go-stats"></div>
+      <button id="go-again" class="btn btn-primary">PLAY AGAIN</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ MAIN MENU ══════════════ -->
+  <div id="menu">
+    <div class="menu-bg-grid"></div>
+    <div class="menu-inner">
+      <div class="title-block">
+        <h1 class="game-title" data-text="AMONG US">AMONG US</h1>
+        <h2 class="game-sub">N I G H T &nbsp; S H I F T</h2>
+        <p class="tagline">Ten crew. Two hollow things wearing their faces.</p>
+      </div>
+
+      <div class="menu-actions">
+        <button id="btn-single" class="btn btn-primary btn-lg">
+          <span class="btn-key">1</span> SOLO EXPEDITION
+          <small>Offline · bots fill the ship</small>
+        </button>
+        <button id="btn-host" class="btn btn-lg">
+          <span class="btn-key">2</span> HOST ONLINE
+          <small>Share a room code</small>
+        </button>
+        <button id="btn-join" class="btn btn-lg">
+          <span class="btn-key">3</span> JOIN ONLINE
+          <small>Enter a room code</small>
+        </button>
+        <button id="btn-settings" class="btn btn-ghost">
+          <span class="btn-key">4</span> SETTINGS
+        </button>
+        <button id="btn-help" class="btn btn-ghost">
+          <span class="btn-key">5</span> HOW TO PLAY
+        </button>
+      </div>
+
+      <div class="menu-foot">
+        <span id="menu-status">Initialising…</span>
+        <span class="menu-version">v1.0.0 · WebGL2 · Electron</span>
+      </div>
+    </div>
+
+    <!-- join dialog -->
+    <div id="join-dialog" class="dialog hidden">
+      <div class="dialog-inner">
+        <h3 id="join-title">JOIN ONLINE</h3>
+        <p class="dialog-desc" id="join-desc">Enter the host address and room code.</p>
+        <label class="field"><span>SERVER ADDRESS</span>
+          <input id="join-host" type="text" value="ws://server:7777/ws" spellcheck="false" />
+        </label>
+        <label class="field"><span>ROOM CODE</span>
+          <input id="join-code" type="text" value="" maxlength="8" spellcheck="false" placeholder="e.g. MAKO42" />
+        </label>
+        <label class="field"><span>YOUR NAME</span>
+          <input id="join-name" type="text" value="" maxlength="14" spellcheck="false" placeholder="Crewmate" />
+        </label>
+        <div class="dialog-actions">
+          <button id="join-go" class="btn btn-primary">CONNECT</button>
+          <button id="join-cancel" class="btn btn-ghost">CANCEL</button>
+        </div>
+        <div id="join-error" class="dialog-error"></div>
+      </div>
+    </div>
+
+    <!-- settings dialog -->
+    <div id="settings-dialog" class="dialog hidden">
+      <div class="dialog-inner">
+        <h3>SETTINGS</h3>
+        <label class="field"><span>MOUSE SENSITIVITY</span>
+          <input id="set-sens" type="range" min="0.2" max="3" step="0.05" value="1" />
+          <em id="set-sens-val">1.00</em>
+        </label>
+        <label class="field"><span>FIELD OF VIEW</span>
+          <input id="set-fov" type="range" min="60" max="100" step="1" value="78" />
+          <em id="set-fov-val">78</em>
+        </label>
+        <label class="field"><span>MASTER VOLUME</span>
+          <input id="set-vol" type="range" min="0" max="1" step="0.01" value="0.8" />
+          <em id="set-vol-val">80%</em>
+        </label>
+        <label class="field check"><input id="set-shake" type="checkbox" checked /><span>CAMERA SHAKE</span></label>
+        <label class="field check"><input id="set-grain" type="checkbox" checked /><span>FILM GRAIN &amp; SCANLINES</span></label>
+        <label class="field check"><input id="set-bloom" type="checkbox" checked /><span>BLOOM</span></label>
+        <label class="field"><span>RENDER QUALITY</span>
+          <select id="set-quality">
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <div class="dialog-actions">
+          <button id="settings-close" class="btn btn-primary">DONE</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- help dialog -->
+    <div id="help-dialog" class="dialog hidden">
+      <div class="dialog-inner wide">
+        <h3>HOW TO PLAY</h3>
+        <div class="help-cols">
+          <div>
+            <h4>CONTROLS</h4>
+            <ul class="keylist">
+              <li><b>W A S D</b><span>Move</span></li>
+              <li><b>Shift</b><span>Sprint</span></li>
+              <li><b>Mouse</b><span>Look</span></li>
+              <li><b>E</b><span>Interact / use task console</span></li>
+              <li><b>F</b><span>Flashlight</span></li>
+              <li><b>Q</b><span>Vent (impostor only)</span></li>
+              <li><b>R</b><span>Kill (impostor only)</span></li>
+              <li><b>B / N</b><span>Sabotage lights / reactor (impostor)</span></li>
+              <li><b>M</b><span>Map</span></li>
+              <li><b>Esc</b><span>Menu</span></li>
+            </ul>
+          </div>
+          <div>
+            <h4>RULES</h4>
+            <p><b>Crewmates</b> finish every task on the ship to win. If you find a body,
+            report it — the survivors will vote on who the killer is.</p>
+            <p><b>Impostors</b> kill silently, sabotage the ship, crawl through the vents and
+            lie their way through the votes. Kill every crewmate to win.</p>
+            <p class="warn">⚠ Some things on this ship are not crewmates.</p>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button id="help-close" class="btn btn-primary">GOT IT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ LOADING ══════════════ -->
+  <div id="pause-panel" class="dialog hidden" style="z-index:75">
+  <div class="dialog-inner"><h3>PAUSED / MENU</h3><p>Online rounds continue while this menu is open.</p><div class="dialog-actions"><button id="pause-resume" class="btn btn-primary">RESUME</button><button id="pause-exit" class="btn">MAIN MENU</button></div></div>
+</div>
+<div id="loading">
+    <div class="load-inner">
+      <div class="load-logo">AMONG US</div>
+      <div class="load-bar"><div id="load-fill"></div></div>
+      <div id="load-text">Booting the Mako…</div>
+    </div>
+  </div>
+
+  <!-- ══════════════ LOBBY ══════════════ -->
+  <div id="lobby" class="hidden">
+    <div class="lobby-inner">
+      <h2 id="lobby-title">WAITING FOR CREW</h2>
+      <div id="lobby-code-box" class="hidden">
+        <span>ROOM CODE</span><strong id="lobby-code">------</strong>
+        <button id="copy-code" class="btn btn-ghost">COPY</button>
+      </div>
+      <ul id="lobby-players"></ul>
+      <div class="lobby-actions">
+        <button id="lobby-ready" class="btn btn-primary">READY</button>
+        <button id="lobby-leave" class="btn btn-ghost">LEAVE</button>
+      </div>
+      <p id="lobby-hint">Bots will fill the ship when the round starts.</p>
+    </div>
+  </div>
+
+  <div id="pointer-hint" class="hidden">CLICK TO LOOK AROUND</div>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
