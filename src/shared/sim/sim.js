@@ -69,7 +69,9 @@ export class Sim {
   }
 
   addPlayer({ name, color, bot = false, id = null, ready = false } = {}) {
-    const pid = id || `p${nextId++}`;
+    let pid = id;
+    if (!pid) do { pid = `p${nextId++}`; } while (this.players.has(pid));
+    if (this.players.has(pid)) throw new Error('Duplicate player id');
     const used = new Set([...this.players.values()].map(p => p.color));
     let c = color && !used.has(color) ? color : PLAYER_COLORS.find(x => !used.has(x)) || PLAYER_COLORS[0];
     const usedNames = new Set([...this.players.values()].map(p => p.name));
@@ -103,6 +105,8 @@ export class Sim {
       lastAction: 0,
       hasVents: false,
     };
+    const free = this.grid.nearestFree(player.x,player.z);
+    player.x=free.x;player.z=free.z;
     this.players.set(pid, player);
     return player;
   }

@@ -117,13 +117,7 @@ export class Game {
       marker.rotation.x=-Math.PI/2; marker.position.set(t.pos[0],0.03,t.pos[2]);
       marker.visible=false; this.view.scene.add(marker); this.taskMarkers.set(t.id,marker);
     }
-    // props also block navigation
-    for (const p of Object.values(this.props.children)) {
-      const r = propRadius(p.name || '');
-      if (r > 0) this.grid.addObstacle(p.position.x, p.position.z, r);
-    }
-    // vents
-    for (const v of VENTS) this.grid.addObstacle(v.pos[0], v.pos[2], 0.45);
+
   }
 
   // ═══════════════════════════════════════════════════════════════ menu ══
@@ -237,6 +231,7 @@ export class Game {
     this.sim = null;
     this.mode = 'menu';
     this.ui.hideLobby();
+    this.ui.hideGameOver();
     this.ui.showHud(false);
     this.ui.hideMeeting();
     this.ui.hideDeath();
@@ -273,12 +268,14 @@ export class Game {
     this.audio.resume();
     this.audio.startAmbient();
     this.resetRound();
+    this.sim = null; this.bots = null;
     this.mode = 'guest';
     const transport = new WsTransport({
       welcome: msg => {
         this.ui.hideMenu();
         this.transport = transport;
         this.roomCode = msg.room;
+        document.getElementById('lobby-hint').textContent = 'Share this server address: ' + (this.runtimeInfo?.lanUrl || wsUrl) + ' · Wait for friends, then everyone presses READY.';
         this.myId = msg.id;
         this.myPlayerId = msg.playerId;
         this.ui.showLobby({ code: msg.room, players: [] });

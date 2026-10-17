@@ -8,6 +8,7 @@ const files = [
   './01_map.test.js',
   './02_net.test.js',
   './03_render.test.js',
+  './04_tasks.test.js',
 ];
 
 for (const f of files) {

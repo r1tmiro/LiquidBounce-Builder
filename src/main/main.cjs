@@ -34,11 +34,11 @@ function lanAddress() {
 
 async function startServer(port) {
   try {
-    const mod = await import(path.join(__dirname, '..', 'server', 'server.js'));
+    const mod = await import(pathToFileURL(path.join(__dirname, '..', 'server', 'server.js')).href);
     return await mod.startServer({ port, host: '0.0.0.0', log: false });
   } catch (err) {
     console.warn('could not start the local server:', err.message);
-    if (err.code === 'EADDRINUSE') { const mod = await import(path.join(__dirname, '..', 'server', 'server.js')); return mod.startServer({port:0, host:'0.0.0.0', log:false}); }
+    if (err.code === 'EADDRINUSE') { const mod = await import(pathToFileURL(path.join(__dirname, '..', 'server', 'server.js')).href); return mod.startServer({port:0, host:'0.0.0.0', log:false}); }
     return null;
   }
 }
@@ -77,7 +77,7 @@ app.whenReady().then(async () => {
   protocol.handle('app', (request) => {
     const url = new URL(request.url);
     const filePath = path.join(RENDERER_ROOT, decodeURIComponent(url.pathname).replace(/^\/+/, '') || 'index.html');
-    if (!filePath.startsWith(RENDERER_ROOT)) {
+    if (!filePath.startsWith(RENDERER_ROOT + path.sep)) {
       return new Response('forbidden', { status: 403 });
     }
     return net.fetch(pathToFileURL(filePath).toString());
@@ -117,12 +117,12 @@ app.whenReady().then(async () => {
           g.startSolo();
           await new Promise(r=>setTimeout(r,2500));
           const me = g.snapshot.players.find(p=>p.id===g.myPlayerId);
-          return {models:Object.keys(g.assets).length, players:g.snapshot.players.length, phase:g.snapshot.phase, tasks:me.tasks.length, triangles:g.view.renderer.info.render.triangles, electron:window.gameAPI.isElectron};
+          return {models:Object.keys(g.assets).length, players:g.snapshot.players.length, phase:g.snapshot.phase, tasks:me.tasks.length, triangles:g.view.renderer.info.render.triangles, electron:window.gameAPI.isElectron, serverPort:(await window.gameAPI.info()).serverPort};
         })()`);
         fs.writeFileSync(path.join(output, 'electron-smoke.json'), JSON.stringify({result,errors},null,2));
         const image = await mainWindow.webContents.capturePage();
         fs.writeFileSync(path.join(output,'electron-smoke.png'), image.toPNG());
-        if (result.models !== 16 || result.players !== 10 || !result.electron || errors.some(e=>/Shader Error|Uncaught|failed to load model/i.test(e))) throw new Error('Electron smoke failed');
+        if (!result.serverPort || result.models !== 16 || result.players !== 10 || !result.electron || errors.some(e=>/Shader Error|Uncaught|failed to load model/i.test(e))) throw new Error('Electron smoke failed');
         console.log('ELECTRON SMOKE PASSED', result);
         app.exit(0);
       } catch (err) { console.error(err); fs.writeFileSync(path.join(output,'electron-smoke-error.txt'),String(err)); app.exit(1); }

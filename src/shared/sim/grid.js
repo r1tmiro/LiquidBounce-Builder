@@ -2,7 +2,7 @@
  * Navigation grid: wall extraction, collision and A* pathfinding.
  * Pure logic, no rendering dependencies - runs on the server and in the browser.
  */
-import { ROOMS, CORRIDORS, DOORS, WALL_HEIGHT } from '../map/definition.js';
+import { ROOMS, CORRIDORS, DOORS, WALL_HEIGHT, PROPS } from '../map/definition.js';
 
 const EPS = 1e-4;
 
@@ -16,7 +16,10 @@ export class NavGrid {
     this.minX = 0; this.minZ = 0; this.w = 0; this.h = 0;
     this.blocked = null;   // Uint8Array
     this.roomOf = null;    // Int16Array (room index or -1)
-    this.obstacles = [];    // circular blockers (props)
+    this.obstacles = PROPS.filter(p => (p.pos[1] || 0) < 0.1).flatMap(p => {
+      const radius = {table:1,reactor:1.45,crate:.5,barrel:.35,server_rack:.5,chair:.25}[p.model];
+      return radius ? [{x:p.pos[0],z:p.pos[2],radius:radius*(p.scale||1)}] : [];
+    });
   }
 
   build() {
@@ -158,7 +161,7 @@ export class NavGrid {
       for (let j = minJ; j <= maxJ; j++) {
         for (let i = minI; i <= maxI; i++) {
           const p = this.cellCenter(i, j);
-          if (Math.hypot(p.x - o.x, p.z - o.z) < o.radius + c * 0.3) this.blocked[j * this.w + i] = 1;
+          if (Math.hypot(p.x - o.x, p.z - o.z) < o.radius + 0.42) this.blocked[j * this.w + i] = 1;
         }
       }
     }

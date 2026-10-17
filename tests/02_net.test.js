@@ -40,6 +40,8 @@ export async function run() {
     const sb = await b.wait(m => m.t === 'snap' && m.snapshot.phase === 'playing');
     eq(sa.snapshot.players.length, 10, 'server fills the round with bots');
     eq(sb.snapshot.players.length, 10, 'guest receives the full round');
+    ok(!sa.snapshot.players.find(p=>p.id===wa.playerId).isBot, 'bot fill preserves the host identity');
+    eq(sa.snapshot.players.find(p=>p.id===wb.playerId).name,'Guest','bot fill preserves the guest identity');
     ok(!!sa.snapshot.players.find(p => p.id === wa.playerId).role, 'host receives its own private role');
     ok(!sa.snapshot.players.find(p => p.id === wb.playerId).role, 'other players’ roles remain private');
     ok(!!sb.snapshot.players.find(p => p.id === wb.playerId).tasks?.length, 'guest receives private task assignments');

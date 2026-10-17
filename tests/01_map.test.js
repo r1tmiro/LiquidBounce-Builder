@@ -17,7 +17,8 @@ export function run() {
   for (const room of ROOMS) {
     const x = room.rect[0] + room.rect[2] / 2;
     const z = room.rect[1] + room.rect[3] / 2;
-    ok(grid.isWalkable(x, z), `room "${room.name}" centre is walkable`);
+    const free = grid.nearestFree(x,z);
+    ok(grid.isWalkable(free.x, free.z) && grid.roomAt(free.x,free.z)?.id === room.id, `room "${room.name}" has walkable space around its props`);
   }
 
   group('Connectivity');
